@@ -5,6 +5,64 @@ import datetime
 import config
 
 app = Flask(__name__)
+from flask import Flask, request, jsonify
+import config
+from datetime import datetime
+import base64
+import requests
+
+app = Flask(__name__)
+
+def generate_token():
+    url = "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
+    response = requests.get(url, auth=(config.CONSUMER_KEY, config.CONSUMER_SECRET))
+    return response.json().get("access_token")
+
+def stk_push(phone_number, amount):
+    token = generate_token()
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    password = base64.b64encode(
+        (config.SHORTCODE + config.PASSKEY + timestamp).encode("utf-8")
+    ).decode("utf-8")
+
+    payload = {
+        "BusinessShortCode": config.SHORTCODE,
+        "Password": password,
+        "Timestamp": timestamp,
+        "TransactionType": "CustomerPayBillOnline",
+        "Amount": amount,
+        "PartyA": phone_number,
+        "PartyB": config.SHORTCODE,
+        "PhoneNumber": phone_number,
+        "CallBackURL": config.CALLBACK_URL,
+        "AccountReference": "MelsunWiFi",
+        "TransactionDesc": "WiFi Payment"
+    }
+
+    headers = {"Authorization": f"Bearer {token}"}
+    url = "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
+
+    response = requests.post(url, json=payload, headers=headers)
+    return response.json()
+
+# ---- Routes ----
+@app.route("/pay", methods=["POST"])
+def pay():
+    data = request.get_json()
+    phone = data.get("phone")
+    amount = data.get("amount")
+    res = stk_push(phone, amount)
+    return jsonify(res)
+
+@app.route("/mpesa/callback", methods=["POST"])
+def mpesa_callback():
+    data = request.get_json()
+    print("M-Pesa Callback:", data)
+    # later: save to database
+    return jsonify({"ResultCode": 0, "ResultDesc": "Callback received successfully"})
+
+if __name__ == "__main__":
+    app.run(debug=True, host="0.0.0.0")
 
 # ------------------------------
 # 1. Health check
