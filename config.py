@@ -1,22 +1,26 @@
-import os
+# ---------------------------
+# EasyPass / Daraja Config
+# ---------------------------
 
-# Daraja (M-Pesa) config
-DARJA_API_KEY = os.environ.get("DARJA_API_KEY", "sandbox_key")
-BUSINESS_SHORTCODE = os.environ.get("BUSINESS_SHORTCODE", "4107899")
-CALLBACK_URL = os.environ.get("CALLBACK_URL", "https://yourapp.com/payment/callback")
+# M-Pesa / Daraja
+BUSINESS_SHORTCODE = "4107899"                     # Your Paybill / Till Number
+LNM_PASSKEY = "28b5e3100273dc2a58b269b79bf7724b661f346aba08c0ab2a3851fa37685888"  # Daraja LNM Passkey
+DARJA_API_KEY = "YOUR_DARAJA_ACCESS_TOKEN"        # Replace with your access token
+CALLBACK_URL = "https://melsunwifi.onrender.com/payment/callback"
 
-# EasyPass config
-EASYPASS_BASE = os.environ.get("EASYPASS_BASE", "https://cnmaestro/api/v1/easypass")
-EASYPASS_API_KEY = os.environ.get("EASYPASS_API_KEY", "easy_pass_key")
+# EasyPass
+EASYPASS_BASE = "https://your-cnmaestro-instance/api/easypass"  # Base URL of your EasyPass API
+EASYPASS_API_KEY = "YOUR_EASYPASS_API_KEY"                     # Your EasyPass API Key
 
-# Voucher plan durations in hours
+# Voucher Plan durations in hours
 PLAN_DURATIONS = {
-    "HourlyPass": 1,
     "DailyPass": 24,
-    "WeeklyPass": 168
+    "WeeklyPass": 168,
+    "MonthlyPass": 720
 }
-# Email notifications
-EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
-EMAIL_PORT = int(os.environ.get("EMAIL_PORT", 587))
-EMAIL_USER = os.environ.get("EMAIL_USER", "your_email@gmail.com")
-EMAIL_PASS = os.environ.get("EMAIL_PASS", "your_email_password")
+
+# Email Config
+EMAIL_HOST = "smtp.gmail.com"     # Example: Gmail SMTP
+EMAIL_PORT = 587
+EMAIL_USER = "your_email@gmail.com"
+EMAIL_PASS = "your_email_password"
