@@ -1,13 +1,22 @@
-# config.py
-# M-PESA Daraja API Configuration
+import os
 
-MPESA_CONSUMER_KEY = "qb6BMKWaoXeOFXfY2ipBbs7AAhjxAz4B"
-MPESA_CONSUMER_SECRET = "dbYlJycxbh8h5af3"
-MPESA_PASSKEY = "28b5e3100273dc2a58b269b79bf7724b661f346aba08c0ab2a3851fa37685888"
-MPESA_ENV = "sandbox"  # or "production"
+# Daraja (M-Pesa) config
+DARJA_API_KEY = os.environ.get("DARJA_API_KEY", "sandbox_key")
+BUSINESS_SHORTCODE = os.environ.get("BUSINESS_SHORTCODE", "4107899")
+CALLBACK_URL = os.environ.get("CALLBACK_URL", "https://yourapp.com/payment/callback")
 
-# Mpesa Config
-SHORTCODE = "4107899"   # Your Paybill / Till Number
-CALLBACK_URL = "https://<your-codespaces-url>/mpesa/callback"
-# Callback URL (must be publicly accessible, e.g., your Codespaces/Render/Heroku URL)
-CALLBACK_URL = "https://<your-public-url>/mpesa/callback"
+# EasyPass config
+EASYPASS_BASE = os.environ.get("EASYPASS_BASE", "https://cnmaestro/api/v1/easypass")
+EASYPASS_API_KEY = os.environ.get("EASYPASS_API_KEY", "easy_pass_key")
+
+# Voucher plan durations in hours
+PLAN_DURATIONS = {
+    "HourlyPass": 1,
+    "DailyPass": 24,
+    "WeeklyPass": 168
+}
+# Email notifications
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", 587))
+EMAIL_USER = os.environ.get("EMAIL_USER", "your_email@gmail.com")
+EMAIL_PASS = os.environ.get("EMAIL_PASS", "your_email_password")
