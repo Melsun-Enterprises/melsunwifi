@@ -1,12 +1,16 @@
 from flask import Flask, request, jsonify, render_template
 import requests
 import base64
-import datetime
-from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime, timedelta
-from config import (BUSINESS_SHORTCODE, LNM_PASSKEY, DARJA_API_KEY, CALLBACK_URL,
-                    EASYPASS_BASE, EASYPASS_API_KEY, PLAN_DURATIONS,
-                    EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASS)
+from apscheduler.schedulers.background import BackgroundScheduler
+from config import (
+    BUSINESS_SHORTCODE, LNM_PASSKEY, DARJA_API_KEY, CALLBACK_URL,
+    EASYPASS_BASE, EASYPASS_API_KEY, PLAN_DURATIONS,
+    EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASS
+)
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 app = Flask(__name__)
 
@@ -17,10 +21,6 @@ scheduler.start()
 scheduled_expirations = {}
 
 # ------------------ EMAIL & SMS HELPERS ------------------
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-
 def send_email(to_email, subject, body):
     msg = MIMEMultipart()
     msg['From'] = EMAIL_USER
@@ -39,10 +39,11 @@ def send_email(to_email, subject, body):
         print(f"Failed to send email to {to_email}: {e}")
 
 def send_sms(phone, message):
-    stk_url = f"https://sandbox.safaricom.co.ke/mpesa/b2c/v1/paymentrequest"
+    # Placeholder: proper B2C security credential required
+    stk_url = "https://sandbox.safaricom.co.ke/mpesa/b2c/v1/paymentrequest"
     payload = {
         "InitiatorName": BUSINESS_SHORTCODE,
-        "SecurityCredential": DARJA_API_KEY,
+        "SecurityCredential": DARJA_API_KEY,  # replace with actual credential
         "CommandID": "BusinessPayment",
         "Amount": 1,
         "PartyA": BUSINESS_SHORTCODE,
@@ -69,7 +70,7 @@ def buy_access():
     voucher_plan = data.get("voucher_plan", "DailyPass")
 
     # Generate STK password
-    timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
     password = base64.b64encode(f"{BUSINESS_SHORTCODE}{LNM_PASSKEY}{timestamp}".encode()).decode()
 
     stk_url = "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
@@ -109,7 +110,7 @@ def payment_callback():
     voucher_code = f"{phone}-{amount}"
     voucher_url = f"{EASYPASS_BASE}/{portal_name}/voucher_plans/{voucher_plan}/vouchers/generate"
     requests.put(voucher_url, json={"voucher_codes":[voucher_code], "managed_account":""},
-                 headers={"Authorization": f"Bearer {EASYPASS_API_KEY}})
+                 headers={"Authorization": f"Bearer {EASYPASS_API_KEY}"})
 
     # Create guest
     guest_email = f"{phone}@example.com"
@@ -125,7 +126,7 @@ def payment_callback():
 
     # Enable access
     requests.put(f"{EASYPASS_BASE}/{portal_name}/guests/{guest_email}/enable_access",
-                 headers={"Authorization": f"Bearer {EASYPASS_API_KEY}")
+                 headers={"Authorization": f"Bearer {EASYPASS_API_KEY}"})
 
     # Store guest info
     guests_data[guest_email] = {
