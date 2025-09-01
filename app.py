@@ -1,8 +1,9 @@
 from flask import Flask, request, jsonify, render_template
 import requests
 import base64
-from datetime import datetime, timedelta
+import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
+from datetime import datetime, timedelta
 from config import (
     BUSINESS_SHORTCODE, LNM_PASSKEY, DARJA_API_KEY, CALLBACK_URL,
     EASYPASS_BASE, EASYPASS_API_KEY, PLAN_DURATIONS,
@@ -14,7 +15,7 @@ from email.mime.multipart import MIMEMultipart
 
 app = Flask(__name__)
 
-# Store guest info in memory (replace with DB for production)
+# ------------------ IN-MEMORY STORAGE ------------------
 guests_data = {}
 scheduler = BackgroundScheduler()
 scheduler.start()
@@ -27,7 +28,6 @@ def send_email(to_email, subject, body):
     msg['To'] = to_email
     msg['Subject'] = subject
     msg.attach(MIMEText(body, 'plain'))
-
     try:
         server = smtplib.SMTP(EMAIL_HOST, EMAIL_PORT)
         server.starttls()
@@ -39,11 +39,10 @@ def send_email(to_email, subject, body):
         print(f"Failed to send email to {to_email}: {e}")
 
 def send_sms(phone, message):
-    # Placeholder: proper B2C security credential required
-    stk_url = "https://sandbox.safaricom.co.ke/mpesa/b2c/v1/paymentrequest"
+    stk_url = f"https://sandbox.safaricom.co.ke/mpesa/b2c/v1/paymentrequest"
     payload = {
         "InitiatorName": BUSINESS_SHORTCODE,
-        "SecurityCredential": DARJA_API_KEY,  # replace with actual credential
+        "SecurityCredential": DARJA_API_KEY,
         "CommandID": "BusinessPayment",
         "Amount": 1,
         "PartyA": BUSINESS_SHORTCODE,
@@ -70,7 +69,7 @@ def buy_access():
     voucher_plan = data.get("voucher_plan", "DailyPass")
 
     # Generate STK password
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
     password = base64.b64encode(f"{BUSINESS_SHORTCODE}{LNM_PASSKEY}{timestamp}".encode()).decode()
 
     stk_url = "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
@@ -89,7 +88,12 @@ def buy_access():
     }
     headers = {"Authorization": f"Bearer {DARJA_API_KEY}"}
     response = requests.post(stk_url, json=payload, headers=headers)
-    return jsonify(response.json())
+
+    return jsonify({
+        "status": "pending",
+        "message": "Payment request sent. Please complete payment on your phone.",
+        "stk_response": response.json()
+    })
 
 # ------------------ PAYMENT CALLBACK ------------------
 @app.route("/payment/callback", methods=["POST"])
@@ -106,7 +110,7 @@ def payment_callback():
     voucher_plan = callback_data.get("plan_name", "DailyPass")
     duration_hours = PLAN_DURATIONS.get(voucher_plan, 24)
 
-    # Generate voucher code
+    # Generate voucher
     voucher_code = f"{phone}-{amount}"
     voucher_url = f"{EASYPASS_BASE}/{portal_name}/voucher_plans/{voucher_plan}/vouchers/generate"
     requests.put(voucher_url, json={"voucher_codes":[voucher_code], "managed_account":""},
